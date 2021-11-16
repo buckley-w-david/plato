@@ -449,6 +449,31 @@ impl Library {
         Ok(())
     }
 
+    pub fn update<P: AsRef<Path>>(&mut self, path: P, new_info: Info) -> Result<(), Error> {
+        let full_path = self.home.join(path.as_ref());
+        let fp = self.paths.get(path.as_ref()).cloned().or_else(|| {
+           full_path.metadata().ok()
+                    .and_then(|md| md.fingerprint(self.fat32_epoch).ok())
+        }).ok_or_else(|| format_err!("can't get fingerprint of {}", path.as_ref().display()))?;
+
+        if let Some(info) = self.db.get_mut(&fp) {
+            info.title = new_info.title;
+            info.subtitle = new_info.subtitle;
+            info.author = new_info.author;
+            info.year = new_info.year;
+            info.language = new_info.language;
+            info.publisher = new_info.publisher;
+            info.series = new_info.series;
+            info.edition = new_info.edition;
+            info.volume = new_info.volume;
+            info.number = new_info.number;
+            info.identifier = new_info.identifier;
+            info.added = new_info.added;
+        }
+        Ok(())
+    }
+
+
     pub fn copy_to<P: AsRef<Path>>(&mut self, path: P, other: &mut Library) -> Result<(), Error> {
         let src = self.home.join(path.as_ref());
 
